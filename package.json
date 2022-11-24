@@ -1,5 +1,5 @@
 {
-  "name": "vite-template-solid",
+  "name": "csvsplit",
   "version": "0.0.0",
   "description": "",
   "scripts": {
@@ -7,7 +7,6 @@
     "build": "vite build",
     "serve": "vite preview"
   },
-  "license": "MIT",
   "devDependencies": {
     "autoprefixer": "^10.4.8",
     "postcss": "^8.4.16",
