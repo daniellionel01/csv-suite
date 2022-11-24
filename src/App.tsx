@@ -1,12 +1,14 @@
 import type { Component } from "solid-js";
-import { For, Show, createSignal, createMemo, createEffect } from "solid-js"
+import { For, Show, createSignal, createMemo } from "solid-js"
 
 import Papa, { ParseResult } from "papaparse"
 
-function parseCSV(file: File): Promise<ParseResult<Record<string, string>>> {
+type Row = string[] | Record<string, string>
+
+function parseCSV(file: File, header: boolean): Promise<ParseResult<Row>> {
   return new Promise(resolve => {
     Papa.parse<Record<string, string>>(file, {
-      header: true,
+      header,
       skipEmptyLines: true,
       complete: resolve
     })
@@ -20,9 +22,10 @@ interface Download {
 
 const App: Component = () => {
   const [parts, setParts] = createSignal(1)
-  const [data, setData] = createSignal<Record<string, string>[]>([])
+  const [data, setData] = createSignal<Row[]>([])
   const [filename, setFilename] = createSignal("")
   const [download, setDownload] = createSignal<Download[]>([])
+  const [header, setHeader] = createSignal(true)
   const hasData = createMemo(() => data().length > 0)
   const perPart = createMemo(() => {
     if (parts() === 0) return 0
@@ -37,7 +40,7 @@ const App: Component = () => {
     setDownload([])
     setParts(1)
 
-    const { data, errors } = await parseCSV(file)
+    const { data, errors } = await parseCSV(file, header())
 
     if (errors.length > 0) {
       alert("There was an error with the file")
@@ -53,7 +56,7 @@ const App: Component = () => {
       const j = i * perPart()
       const partData = data().slice(j, j+perPart())
 
-      const csv = Papa.unparse(partData);
+      const csv = Papa.unparse(partData, { header: header() });
 
       const prefix = filename().replace(/.csv/g, "")
       const download = `${prefix}-part${i+1}.csv`
@@ -69,6 +72,12 @@ const App: Component = () => {
     <div class="flex flex-col items-center mt-10">
       <h1 class="text-3xl">CSV Split</h1>
       <div class="form-control w-full max-w-md mt-8">
+        <label class="label cursor-pointer">
+          <span class="label-text text-lg">Header Row</span> 
+          <input type="checkbox" class="toggle" checked={header()} onInput={() => setHeader(h => !h)} />
+        </label>
+      </div>
+      <div class="form-control w-full max-w-md mt-4">
         <input type="file" class="file-input file-input-bordered file-input-primary w-full max-w-md"
           multiple={false} accept="text/csv"
           onChange={onFileInput}
