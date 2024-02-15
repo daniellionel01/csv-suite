@@ -1,8 +1,9 @@
 import { Split } from "./Split.tsx"
+import { Merge } from "./Merge.tsx"
 import { type Component, createSignal, Show } from "solid-js"
 
 export const App: Component = () => {
-  const [tab, setTab] = createSignal("split")
+  const [tab, setTab] = createSignal("merge")
 
   return <div class="w-full px-8 py-4">
     <div class="tabs tabs-lg tabs-bordered">
@@ -19,7 +20,7 @@ export const App: Component = () => {
         diff content
       </Show>
       <Show when={tab() === "merge"}>
-        merge content
+        <Merge />
       </Show>
       <Show when={tab() === "filter"}>
         filter content
