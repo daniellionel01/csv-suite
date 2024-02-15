@@ -58,7 +58,7 @@ export const Split: Component = () => {
 
       const csv = Papa.unparse(partData, { header: header() });
 
-      const prefix = filename().replace(/.csv/g, "")
+      const prefix = filename().replace(/\.csv/g, "")
       const download = `${prefix}-part${i+1}.csv`
       const blob = new Blob([csv], { type: "text/csv" });
       const href = window.URL.createObjectURL(blob);
