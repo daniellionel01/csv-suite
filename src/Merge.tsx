@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { For, Show, createSignal, createMemo } from "solid-js"
+import { For, Show, createSignal, createMemo, createEffect } from "solid-js"
 
 import Papa, { ParseResult } from "papaparse"
 
@@ -49,6 +49,19 @@ export const Merge: Component = () => {
   })
   const combinedColumns = createMemo(() => {
     return Array.from(new Set([...columns1(), ...columns2()]))
+  })
+
+  createEffect(() => {
+    if (columns1().length === 0 || match1() !== "") return
+    const email = columns1().find(c => c.toLowerCase().includes("email"))
+    if (email === undefined) return
+    setMatch1(email)
+  })
+  createEffect(() => {
+    if (columns2().length === 0 || match2() !== "") return
+    const email = columns2().find(c => c.toLowerCase().includes("email"))
+    if (email === undefined) return
+    setMatch2(email)
   })
 
   const onFileInput1 = async (e: Event & { currentTarget: HTMLInputElement }) => {
@@ -174,7 +187,7 @@ export const Merge: Component = () => {
             <div class="space-y-2">
               <div class="text-lg font-medium">Match on column</div>
               <div class="flex justify-between space-x-8">
-                <select class="select select-bordered w-full max-w-xs" onChange={e => setMatch1(e.currentTarget.value)}>
+                <select class="select select-bordered w-full max-w-xs" value={match1()} onChange={e => setMatch1(e.currentTarget.value)}>
                   <option disabled selected>Match Column</option>
                   <For each={columns1()}>
                     {item => (
@@ -183,7 +196,7 @@ export const Merge: Component = () => {
                   </For>
                 </select>
 
-                <select class="select select-bordered w-full max-w-xs" onChange={e => setMatch2(e.currentTarget.value)}>
+                <select class="select select-bordered w-full max-w-xs" value={match2()} onChange={e => setMatch2(e.currentTarget.value)}>
                   <option disabled selected>Match Column</option>
                   <For each={columns2()}>
                     {item => (
