@@ -15,7 +15,7 @@ function parseCSV(file: File, header: boolean): Promise<ParseResult<Row>> {
   })
 }
 
-export const Merge: Component = () => {
+export const Diff: Component = () => {
   const [data1, setData1] = createSignal<Row[]>([])
   const [filename1, setFilename1] = createSignal("")
   const [header1, setHeader1] = createSignal(true)
@@ -27,6 +27,10 @@ export const Merge: Component = () => {
 
   const [match1, setMatch1] = createSignal("")
   const [match2, setMatch2] = createSignal("")
+
+  const [includeLeft, setIncludeLeft] = createSignal(false)
+  const [includeOverlapping, setIncludeOverlapping] = createSignal(false)
+  const [includeRight, setIncludeRight] = createSignal(false)
 
   const [downloadLink, setDownloadLink] = createSignal("")
   const [downloadName, setDownloadName] = createSignal("")
@@ -87,39 +91,71 @@ export const Merge: Component = () => {
     setData2([...data])
   }
 
-  const onMerge = async () => {
-    const mergedData: Row[] = []
+  const getLeftData = () => {
+    if (match1() === "" || match2() === "") return []
+    const result: Row[] = []
     for (const row of data1()) {
-      const mergedRow = { ...row }
-
       const matchValue = row[match1()]
-      if (matchValue === undefined || matchValue === "") {
-        mergedData.push(mergedRow)
-        continue
-      }
-
-      const matching = data2().find(other => other[match2()] === matchValue)
-      if (matching === undefined) {
-        mergedData.push(mergedRow)
-        continue
-      }
+      const match = data2().find(other => other[match2()] === matchValue)
+      if (match !== undefined) continue
+      result.push({ ...row })
+    }
+    return result
+  }
+  const getOverlappingData = () => {
+    if (match1() === "" || match2() === "") return []
+    const result: Row[] = []
+    for (const row of data1()) {
+      const matchValue = row[match2()]
+      const match = data2().find(other => other[match2()] === matchValue)
+      if (match === undefined) continue
 
       for (const col of combinedColumns()) {
         if (columns1().includes(col)) {
-          if (matching[col] === undefined) continue
+          if (match[col] === undefined) continue
           const prop = `${col} (2)`
-          mergedRow[prop] = matching[col]
+          row[prop] = match[col]
         } else {
-          mergedRow[col] = matching[col] ?? ""
+          row[col] = match[col] ?? ""
         }
       }
 
-      mergedData.push(mergedRow)
+      result.push({ ...row })
+    }
+    return result
+  }
+  const getRightData = () => {
+    if (match1() === "" || match2() === "") return []
+    const result: Row[] = []
+    for (const row of data2()) {
+      const matchValue = row[match2()]
+      const match = data1().find(other => other[match2()] === matchValue)
+      if (match !== undefined) continue
+      result.push({ ...row })
+    }
+    return result
+  }
+
+  const onDiff = async () => {
+    const result: Row[] = []
+
+    const leftData = getLeftData()
+    const overlappingData = getOverlappingData()
+    const rightData = getRightData()
+    
+    if (includeLeft()) {
+      result.push(...getLeftData())
+    }
+    if (includeOverlapping()) {
+      result.push(...getOverlappingData())
+    }
+    if (includeRight()) {
+      result.push(...getRightData())
     }
 
-    const csv = Papa.unparse(mergedData, { header: true });
+    const csv = Papa.unparse(result, { header: true });
     const prefix = filename1().replace(/\.csv/g, "")
-    const name = `${prefix}-merged.csv`
+    const name = `${prefix}-diff.csv`
     const blob = new Blob([csv], { type: "text/csv" });
     const href = window.URL.createObjectURL(blob);
 
@@ -150,10 +186,6 @@ export const Merge: Component = () => {
             </Show>
           </div>
 
-          <div class="h-full pt-10">
-            <i class="ph-bold ph-arrow-left text-3xl"></i>
-          </div>
-
           <div class="max-w-md space-y-2">
             <div class="form-control w-full">
               <label class="label cursor-pointer">
@@ -173,9 +205,32 @@ export const Merge: Component = () => {
             </Show>
           </div>
         </div>
-
         <Show when={hasData1() && hasData2()}>
           <div class="space-y-4">
+            <div class="space-y-2">
+              <div class="text-lg font-medium">Include</div>
+              <div class="flex justify-between gap-8">
+                <div class="form-control w-full">
+                  <label class="label cursor-pointer">
+                    <span class="label-text">left</span> 
+                    <input type="checkbox" checked={includeLeft()} onChange={() => setIncludeLeft(x => !x)} class="checkbox" />
+                  </label>
+                </div>
+                <div class="form-control w-full">
+                  <label class="label cursor-pointer">
+                    <span class="label-text">overlapping</span> 
+                    <input type="checkbox" checked={includeOverlapping()} onChange={() => setIncludeOverlapping(x => !x)} class="checkbox" />
+                  </label>
+                </div>
+                <div class="form-control w-full">
+                  <label class="label cursor-pointer">
+                    <span class="label-text">right</span> 
+                    <input type="checkbox" checked={includeRight()} onChange={() => setIncludeRight(x => !x)} class="checkbox" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div class="space-y-2">
               <div class="text-lg font-medium">Match on column</div>
               <div class="flex justify-between space-x-8">
@@ -199,8 +254,8 @@ export const Merge: Component = () => {
               </div>
             </div>
 
-            <button class="btn btn-primary w-full" onClick={onMerge} disabled={match1() === "" || match2() === ""}>
-              merge
+            <button class="btn btn-primary w-full" onClick={onDiff} disabled={match1() === "" || match2() === ""}>
+              diff
             </button>
             <Show when={downloadLink() !== ""}>
               <div class="link text-md">

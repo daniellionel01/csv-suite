@@ -1,6 +1,7 @@
-import { Split } from "./Split.tsx"
-import { Merge } from "./Merge.tsx"
+import { Split } from "./Split"
+import { Merge } from "./Merge"
 import { type Component, createSignal, Show } from "solid-js"
+import { Diff } from "./Diff"
 
 export const App: Component = () => {
   const [tab, setTab] = createSignal("merge")
@@ -17,7 +18,7 @@ export const App: Component = () => {
         <Split />
       </Show>
       <Show when={tab() === "diff"}>
-        diff content
+        <Diff />
       </Show>
       <Show when={tab() === "merge"}>
         <Merge />
