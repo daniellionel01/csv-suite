@@ -138,10 +138,6 @@ export const Diff: Component = () => {
 
   const onDiff = async () => {
     const result: Row[] = []
-
-    const leftData = getLeftData()
-    const overlappingData = getOverlappingData()
-    const rightData = getRightData()
     
     if (includeLeft()) {
       result.push(...getLeftData())
