@@ -33,9 +33,11 @@ export const Filter: Component = () => {
   const [header, setHeader] = createSignal(true);
   const hasData = createMemo(() => data().length > 0);
 
+  const [matchingData, setMatchingData] = createSignal<Row[]>([])
   const [downloadLinkMatch, setDownloadLinkMatch] = createSignal("");
   const [downloadNameMatch, setDownloadNameMatch] = createSignal("");
 
+  const [missingData, setMissingData] = createSignal<Row[]>([])
   const [downloadLinkMiss, setDownloadLinkMiss] = createSignal("");
   const [downloadNameMiss, setDownloadNameMiss] = createSignal("");
 
@@ -137,6 +139,7 @@ export const Filter: Component = () => {
       if (!match) continue
       matchingData.push({...row});
     }
+    setMatchingData([...matchingData])
 
     const csvMatching = Papa.unparse(matchingData, { header: true });
     const prefixMatching = filename().replace(/\.csv/g, "");
@@ -155,6 +158,7 @@ export const Filter: Component = () => {
       if (match) continue
       missingData.push({...row});
     }
+    setMissingData([...missingData])
 
     const csvMissing = Papa.unparse(missingData, { header: true });
     const prefixMissing = filename().replace(/\.csv/g, "");
@@ -164,8 +168,6 @@ export const Filter: Component = () => {
 
     setDownloadLinkMiss(hrefMissing);
     setDownloadNameMiss(nameMissing);
-
-    console.log({ matchingData, missingData })
   };
 
   return (
@@ -264,14 +266,14 @@ export const Filter: Component = () => {
             <Show when={downloadLinkMatch() !== ""}>
               <div class="link text-md">
                 <a href={downloadLinkMatch()} download={downloadNameMatch()}>
-                  {downloadNameMatch()}
+                  {downloadNameMatch()} ({matchingData().length})
                 </a>
               </div>
             </Show>
             <Show when={downloadLinkMiss() !== ""}>
               <div class="link text-md">
                 <a href={downloadLinkMiss()} download={downloadNameMiss()}>
-                  {downloadNameMiss()}
+                  {downloadNameMiss()} ({missingData().length})
                 </a>
               </div>
             </Show>
