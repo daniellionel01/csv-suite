@@ -113,11 +113,19 @@ export const Merge: Component = () => {
           mergedRow[col] = matching[col] ?? ""
         }
       }
-
       mergedData.push(mergedRow)
     }
 
-    const csv = Papa.unparse(mergedData, { header: true });
+    const columns = [] as string[]
+    for (const row of mergedData) {
+      const ks = Object.keys(row)
+      for (const k of ks) {
+        if (columns.includes(k)) continue
+        columns.push(k)
+      }
+    }
+
+    const csv = Papa.unparse(mergedData, { header: true, columns });
     const prefix = filename1().replace(/\.csv/g, "")
     const name = `${prefix}-merged.csv`
     const blob = new Blob([csv], { type: "text/csv" });
